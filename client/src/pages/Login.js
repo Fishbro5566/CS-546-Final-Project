@@ -1,16 +1,20 @@
+import axios from 'axios';
+import { useState } from 'react';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import { Link, useNavigate } from "react-router-dom";
 import './login.css';
-import { compare } from 'bcryptjs-react';
-import axios from 'axios';
-import { useState } from 'react';
+import { useCookies } from 'react-cookie';
 
 export default function Login() {
-
   const navigate = useNavigate();
+  const [cookies, setCookie] = useCookies(["auth"]);
 
-  const initialState = {
+  function createCookie(value) {
+    setCookie("auth", value, { path: '/'});
+  }
+
+  const initialState = {  
     email: '',
     password: ''
   };
@@ -26,18 +30,13 @@ export default function Login() {
     event.preventDefault();
     try {
       const { data } = await axios.post(`http://localhost:9000/users/login`, {
-        email: email
+        email,
+        password
       });
       if (!!data) {
-        // compare password
-        console.log('data returned ', data);
-        const passwordMatched = await compare(password, data.password);
-        if (passwordMatched) {
-          setFormState(initialState);
-          navigate('/home');
-        } else {
-          alert('Incorrect password');
-        }
+        setFormState(initialState);
+        createCookie(data.token);
+        navigate('/home');
       }
     } catch (e) {
       alert('User does not exist')
